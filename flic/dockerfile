@@ -1,0 +1,24 @@
+FROM alpine:latest
+
+ENV ARCH=aarch64
+
+# Install glibc
+RUN set -ex
+RUN apk --update add libstdc++ curl ca-certificates wget
+RUN wget https://github.com/Lauri-Nomme/alpine-glibc-xb/releases/download/aarch64-2.33-r0/glibc-2.33-r0.apk
+RUN wget https://github.com/Lauri-Nomme/alpine-glibc-xb/releases/download/aarch64-2.33-r0/glibc-bin-2.33-r0.apk
+RUN apk add glibc-2.33-r0.apk glibc-bin-2.33-r0.apk --allow-untrusted
+
+# Install flic
+RUN apk --no-cache --virtual deps add git && \
+	git clone https://github.com/50ButtonsEach/fliclib-linux-hci.git /tmp/src && \
+	cp /tmp/src/bin/${ARCH}/flicd /usr/bin/flicd && \
+	chmod +x /usr/bin/flicd && \
+	mkdir /config && \
+	rm -rf /tmp/src && \
+	apk del deps
+
+WORKDIR /config
+VOLUME ["/config"]
+EXPOSE 5551
+ENTRYPOINT ["/usr/bin/flicd", "-f", "/config/db", "-s", "0.0.0.0", "-p", "5551"]
